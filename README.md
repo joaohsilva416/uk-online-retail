@@ -106,3 +106,12 @@ uk_ecommerce/
 ├── silver/       # Delta Table with cleaned data
 └── gold/         # Delta Tables with aggregated metrics
 ```
+---
+
+## 📸 Screenshots
+
+### S3 Landing Zone
+![S3 Bucket](assets/s3-bucket.png)
+
+### Databricks Unity Catalog
+![Unity Catalog](assets/unity-catalog.png)
