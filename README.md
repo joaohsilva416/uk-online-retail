@@ -13,13 +13,20 @@ The dataset used is **OnlineRetail.csv**, a public dataset of real e-commerce tr
 ## 💼 Business Understanding
 
 1. What is the main business process represented by the dataset?  
-The primary business process represented in the dataset is the process of selling products to customers, recorded through the purchase transactions that took place.
+The primary business process represented in the dataset is the sale of products to customers, recorded through purchase transactions.
 
 2. What does a sale represent in this context?  
-A sale represents a commercial transaction in which a customer purchases one or more products. In the dataset, each sale is identified by an InvoiceNo and may contain multiple items associated with the same transaction. Records where the InvoiceNo begins with the letter "C" indicate cancellations and, therefore, do not represent completed sales.
+A sale represents a commercial transaction in which a customer purchases one or more products. In the dataset, each sale is identified by an InvoiceNo and may contain multiple invoice line items. Records whose InvoiceNo begins with the letter "C" indicate cancellations and, therefore, do not represent completed sales.
 
 3. What should the granularity of the fact table be?  
-The granularity of the fact table must be at the sales item level. Each record represents a specific product associated with a transaction (InvoiceNo), containing information such as quantity sold and unit price.
+The granularity of the fact table is at the invoice line item level. Each record represents a specific product sold within a transaction (InvoiceNo), including attributes such as quantity sold and unit price.
+---
+
+## 📐 Fact Table Granularity
+
+The choice to have each record in the fact table represent one invoice line item is based on the fact that this is the lowest level of granularity available in the dataset. This approach preserves all transaction details, enabling future aggregations without losing information.
+
+
 ---
 
 ## 🏗️ Architecture
