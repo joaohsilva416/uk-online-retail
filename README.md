@@ -24,8 +24,7 @@ The granularity of the fact table is at the invoice line item level. Each record
 
 ## 📐 Fact Table Granularity
 
-The choice to have each record in the fact table represent one invoice line item is based on the fact that this is the lowest level of granularity available in the dataset. This approach preserves all transaction details, enabling future aggregations without losing information.
-
+The choice to have each record in the fact table represent one invoice line item is based on the fact that this is the lowest level of granularity available in the dataset. This approach preserves all transaction details, enabling future aggregations at different levels, such as by customer, product, country, or transaction, without losing information.
 
 ---
 
