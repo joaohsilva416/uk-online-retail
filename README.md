@@ -129,7 +129,7 @@ uk_ecommerce/
 ## 📸 Screenshots
 
 ### S3 Landing Zone
-![S3 Bucket](assets/s3-bucket.png)
+![S3 Bucket](assets/architecture/s3-bucket.png)
 
 ### Databricks Unity Catalog
-![Unity Catalog](assets/unity-catalog.png)
+![Unity Catalog](assets/architecture/unity-catalog.png)
