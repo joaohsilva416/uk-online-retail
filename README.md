@@ -60,7 +60,7 @@ The dimensional model is designed to support analytical queries by organizing de
 ### Customer Dimension
 
 <p align="center">
-  <img src="assets/diagrams/dim_customer.png" width="300">
+  <img src="assets/diagrams/pngs/dim_customer.png" width="300">
 </p>
 
 The `dim_customer` table stores descriptive information about customers and provides customer context for analytical queries.
@@ -82,7 +82,7 @@ The original dataset contains only two customer-related attributes: `CustomerID`
 ### Product Dimension
 
 <p align="center">
-  <img src="assets/diagrams/dim_product.png" width="300">
+  <img src="assets/diagrams/pngs/dim_product.png" width="300">
 </p>
 
 The `dim_product` table stores descriptive information about the products available in the dataset.
@@ -112,7 +112,7 @@ Since the dataset does not provide a master product reference, no automatic stan
 ### Date Dimension
 
 <p align="center">
-  <img src="assets/diagrams/dim_date.png" width="320">
+  <img src="assets/diagrams/pngs/dim_date.png" width="320">
 </p>
 
 The `dim_date` table stores calendar attributes used to support time-based analysis and reporting.
@@ -133,6 +133,33 @@ The `dim_date` table stores calendar attributes used to support time-based analy
 Unlike transactional data, calendar dates exist independently of business events. Therefore, the date dimension can be generated in advance rather than being created dynamically during data ingestion.
 
 Pre-computing the date dimension simplifies analytical queries, ensures consistency across reports, and allows complete time-series analysis, including dates without recorded sales.
+
+---
+
+### Fact Table
+<p align="center">
+  <img src="assets/diagrams/pngs/fact_table.png" width="320">
+</p>
+
+| Column       | Description                                      |
+|--------------|--------------------------------------------------|
+|`sale_key`    |Surrogate Key (PK)                                |
+|`customer_key`|Foreign Key (FK) to `dim_customer`                |
+|`product_key` |Foreign Key (FK) to `dim_product`                 |
+|`date_key`    |Foreign Key (FK) to `dim_date`                    |
+|`quantity`    |Quantities of each product (item) per transaction |
+|`unit_price`  |Unit price of the product                         |
+|`total_sales` |Total sales amount (`quantity * unit_price`)      |
+|`invoice_no`  |6-digit identifier assigned to each transaction   |
+
+---
+
+### Star Schema
+<p align="center">
+  <img src="assets/diagrams/pngs/star_schema.png" width="520">
+</p>
+
+The star schema connects the `fact_sales` table with the dimensional tables used to describe each sales transaction.
 
 ---
 
@@ -181,17 +208,20 @@ Calculation of aggregated metrics for business analysis.
 
 ## 📂 Project Structure
 
-```
+```text
 uk-online-retail/
 ├── assets/
 │   ├── architecture/
 │   └── diagrams/
+│       ├── pngs/
+│       └── drawio/
 ├── notebooks/
 │   ├── ingestion-raw-bronze.ipynb
 │   ├── ingestion-bronze-silver.ipynb
 │   └── ingestion-silver-gold.ipynb
 ├── warehouse/
 │   ├── diagrams/
+│   └── dimensions/
 └── README.md
 ```
 
@@ -222,5 +252,4 @@ The project is organized in the Databricks Unity Catalog following the Medallion
 The project will continue to evolve with the following enhancements:
 
 - Implement the dimension tables in SQL on Databricks.
-- Build the `fact_sales` table at the invoice line item granularity.
-- Create the complete Star Schema.
+- Implement the `fact_sales` table in SQL on Databricks.
