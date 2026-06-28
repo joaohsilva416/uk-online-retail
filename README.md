@@ -1,6 +1,6 @@
 # 🛒 UK Online Retail — Data Pipeline with Medallion Architecture
 
-Data pipeline built on **Databricks** with **PySpark** and storage on **Amazon S3**, following the medallion architecture (Raw → Bronze → Silver → Gold) to process sales data from a UK-based online retail store.
+Data engineering project built on Databricks using PySpark and Amazon S3, following the Medallion Architecture (Raw → Bronze → Silver → Gold). The project also includes the design of a dimensional model to support analytical workloads.
 
 ---
 
@@ -30,43 +30,109 @@ The choice to have each record in the fact table represent one invoice line item
 
 ## 🏗️ Architecture
 
-```
-S3 (OnlineRetail.csv)
-        │
-        ▼
-┌──────────────┐
-│  Raw (S3)    │  Landing volume on S3
-└──────┬───────┘
-       │  ingestion-raw-bronze
-       ▼
-┌──────────────┐
-│   Bronze     │  Delta Table — raw data, type casting only
-└──────┬───────┘
-       │  ingestion-bronze-silver
-       ▼
-┌──────────────┐
-│   Silver     │  Delta Table — cleaned and enriched data
-└──────┬───────┘
-       │  ingestion-silver-gold
-       ▼
-┌──────────────────────────────────────┐
-│               Gold                   │
-│  sales_by_customer                   │
-│  sales_per_product                   │
-│  sales_per_country                   │
-└──────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A["Amazon S3<br/>OnlineRetail.csv"] --> B["Raw Layer<br/>S3 Landing Volume"]
+
+    B --> C["Bronze Layer<br/>Delta Table<br/>uk_ecommerce.bronze.online_retail"]
+
+    C --> D["Silver Layer<br/>Delta Table<br/>Cleaned and enriched data<br/>uk_ecommerce.silver.online_retail"]
+
+    D --> E["Gold Layer<br/>Aggregated analytical tables"]
+
+    E --> F["sales_by_customer"]
+    E --> G["sales_per_product"]
+    E --> H["sales_per_country"]
+
+    B -. "ingestion-raw-bronze" .-> C
+    C -. "ingestion-bronze-silver" .-> D
+    D -. "ingestion-silver-gold" .-> E
 ```
 
-## 📂 Project Structure
+---
 
-```
-uk-online-retail/
-├── notebooks/
-│   ├── ingestion-raw-bronze.ipynb    # Raw → Bronze
-│   ├── ingestion-bronze-silver.ipynb # Bronze → Silver
-│   └── ingestion-silver-gold.ipynb   # Silver → Gold
-└── README.md
-```
+## 📊 Data Model
+
+The dimensional model is designed to support analytical queries by organizing descriptive information into dimensions. Each dimension provides business context for the fact table while reducing data redundancy and improving query performance.
+
+---
+
+### Customer Dimension
+
+<p align="center">
+  <img src="assets/diagrams/dim_customer.png" width="300">
+</p>
+
+The `dim_customer` table stores descriptive information about customers and provides customer context for analytical queries.
+
+#### Attributes
+
+| Column         | Description                                  |
+| -------------- | -------------------------------------------- |
+| `customer_key` | Surrogate key generated for the dimension.   |
+| `customer_id`  | Customer identifier from the source dataset. |
+| `country`      | Customer's country.                          |
+
+#### Modeling Decisions
+
+The original dataset contains only two customer-related attributes: `CustomerID` and `Country`. Since `Country` provides valuable geographical context, it was incorporated into the customer dimension to enable analyses such as sales by country and customer distribution without requiring additional transformations.
+
+---
+
+### Product Dimension
+
+<p align="center">
+  <img src="assets/diagrams/dim_product.png" width="300">
+</p>
+
+The `dim_product` table stores descriptive information about the products available in the dataset.
+
+#### Attributes
+
+| Column        | Description                                 |
+| ------------- | ------------------------------------------- |
+| `product_key` | Surrogate key generated for the dimension.  |
+| `stock_code`  | Product identifier from the source dataset. |
+| `description` | Product description.                        |
+
+#### Data Quality Analysis
+
+After removing null and duplicate records from the dataset, an exploratory analysis identified **213 `StockCode` values** associated with multiple product descriptions.
+
+The inconsistencies include:
+
+* Minor differences in formatting or wording.
+* Possible historical changes in product descriptions.
+* Descriptions that differ significantly, making it impossible to determine whether they refer to the same product or different products.
+
+Since the dataset does not provide a master product reference, no automatic standardization was applied. The original descriptions were preserved to avoid introducing assumptions into the dimensional model.
+
+---
+
+### Date Dimension
+
+<p align="center">
+  <img src="assets/diagrams/dim_date.png" width="320">
+</p>
+
+The `dim_date` table stores calendar attributes used to support time-based analysis and reporting.
+
+#### Attributes
+
+| Column       | Description                                |
+| ------------ | ------------------------------------------ |
+| `date_key`   | Surrogate key generated for the dimension. |
+| `date`       | Calendar date.                             |
+| `day`        | Day of the month.                          |
+| `month`      | Month number.                              |
+| `month_name` | Month name.                                |
+| `year`       | Calendar year.                             |
+
+#### Why Pre-compute a Date Dimension?
+
+Unlike transactional data, calendar dates exist independently of business events. Therefore, the date dimension can be generated in advance rather than being created dynamically during data ingestion.
+
+Pre-computing the date dimension simplifies analytical queries, ensures consistency across reports, and allows complete time-series analysis, including dates without recorded sales.
 
 ---
 
@@ -84,8 +150,8 @@ Reads the CSV stored in the S3 volume (`/Volumes/uk_ecommerce/raw/landing/Online
 
 Cleaning and transformation of the raw data.
 
-- Duplicate removal (`dropDuplicates`)
-- Null removal (`dropna`)
+- Removal of duplicate records (`dropDuplicates`)
+- Removal of null values (`dropna`)
 - Creation of the calculated column `totalSales` (`Quantity * UnitPrice`)
 - Parsing and normalization of the `InvoiceDate` column to `DateType`
 - Write to `uk_ecommerce.silver.online_retail`
@@ -113,23 +179,48 @@ Calculation of aggregated metrics for business analysis.
 
 ---
 
-## 🗄️ Unity Catalog
-
-The project uses the following catalog and schemas in the Databricks Unity Catalog:
+## 📂 Project Structure
 
 ```
-uk_ecommerce/
-├── raw/          # S3 volume with the original CSV
-├── bronze/       # Delta Table with raw data
-├── silver/       # Delta Table with cleaned data
-└── gold/         # Delta Tables with aggregated metrics
+uk-online-retail/
+├── assets/
+│   ├── architecture/
+│   └── diagrams/
+├── notebooks/
+│   ├── ingestion-raw-bronze.ipynb
+│   ├── ingestion-bronze-silver.ipynb
+│   └── ingestion-silver-gold.ipynb
+├── warehouse/
+│   ├── diagrams/
+└── README.md
 ```
+
 ---
 
-## 📸 Screenshots
+## 🚀 Implementation
 
-### S3 Landing Zone
-![S3 Bucket](assets/architecture/s3-bucket.png)
+### Amazon S3 Landing Zone
 
-### Databricks Unity Catalog
-![Unity Catalog](assets/architecture/unity-catalog.png)
+<p align="center">
+  <img src="assets/architecture/s3-bucket.png" width="900">
+</p>
+
+The original `OnlineRetail.csv` dataset is stored in an Amazon S3 bucket, which serves as the landing zone for the ingestion pipeline. From this location, the data is accessed by Databricks and loaded into the Raw layer before progressing through the Medallion Architecture.
+
+### Unity Catalog Structure
+
+<p align="center">
+  <img src="assets/architecture/unity-catalog.png" width="450">
+</p>
+
+The project is organized in the Databricks Unity Catalog following the Medallion Architecture. The catalog contains the Raw, Bronze, Silver, and Gold schemas, where each layer represents a different stage of data processing—from raw ingestion to business-ready analytical tables.
+
+---
+
+## 🚧 Future Improvements
+
+The project will continue to evolve with the following enhancements:
+
+- Implement the dimension tables in SQL on Databricks.
+- Build the `fact_sales` table at the invoice line item granularity.
+- Create the complete Star Schema.
