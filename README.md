@@ -187,7 +187,10 @@ Cleaning and transformation of the raw data.
 
 ### 3. Silver → Gold (`ingestion-silver-gold`)
 
-Calculation of aggregated metrics for business analysis.
+Product description normalization and calculation of aggregated metrics for business analysis.
+
+- Join of `df_silver` with a manually validated reference file (`normalized_descriptions.csv`), used to standardize the `Description` column for `StockCode` values with multiple descriptions
+- Calculation of aggregated metrics per customer, product, and country
 
 | Gold Table | Description | Columns |
 |---|---|---|
