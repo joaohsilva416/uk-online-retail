@@ -38,6 +38,8 @@ flowchart TD
 
     C --> D["Silver Layer<br/>Delta Table<br/>Cleaned and enriched data<br/>uk_ecommerce.silver.online_retail"]
 
+    I["normalized_descriptions.csv<br/>Reference Volume"] -.-> D
+
     D --> E["Gold Layer<br/>Aggregated analytical tables"]
 
     E --> F["sales_by_customer"]
@@ -47,6 +49,7 @@ flowchart TD
     B -. "ingestion-raw-bronze" .-> C
     C -. "ingestion-bronze-silver" .-> D
     D -. "ingestion-silver-gold" .-> E
+    I -. "description normalization" .-> D
 ```
 
 ---
