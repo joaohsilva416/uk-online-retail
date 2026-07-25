@@ -252,12 +252,3 @@ The original `OnlineRetail.csv` dataset is stored in an Amazon S3 bucket, which 
 </p>
 
 The project is organized in the Databricks Unity Catalog following the Medallion Architecture. The catalog contains the Raw, Bronze, Silver, and Gold schemas, where each layer represents a different stage of data processing—from raw ingestion to business-ready analytical tables.
-
----
-
-## 🚧 Future Improvements
-
-The project will continue to evolve with the following enhancements:
-
-- Implement the dimension tables in SQL on Databricks.
-- Implement the `fact_sales` table in SQL on Databricks.
