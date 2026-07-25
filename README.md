@@ -105,7 +105,9 @@ The inconsistencies include:
 * Possible historical changes in product descriptions.
 * Descriptions that differ significantly, making it impossible to determine whether they refer to the same product or different products.
 
-Since the dataset does not provide a master product reference, no automatic standardization was applied. The original descriptions were preserved to avoid introducing assumptions into the dimensional model.
+Since the dataset does not provide a master product reference, standardization could not be inferred automatically. Each of the 213 divergent cases was reviewed manually to define a single canonical description per `StockCode`, and the result was stored as a reference file (`normalized_descriptions.csv`).
+
+During the Silver → Gold step, this reference is joined back into `df_silver` and used to overwrite the `Description` column via `coalesce`, so that products with a validated normalization receive the canonical description while all other records keep their original value unchanged.
 
 ---
 
