@@ -275,4 +275,4 @@ The original `OnlineRetail.csv` dataset is stored in an Amazon S3 bucket, which 
   <img src="assets/architecture/unity-catalog.png" width="450">
 </p>
 
-The project is organized in the Databricks Unity Catalog following the Medallion Architecture. The catalog contains the Raw, Bronze, Silver, and Gold schemas, where each layer represents a different stage of data processing—from raw ingestion to business-ready analytical tables.
+The project is organized in the Databricks Unity Catalog following the Medallion Architecture. The Raw and Bronze schemas hold Volumes for file-based storage (`raw.landing` for the original CSV, `bronze.reference` for the manually validated `normalized_descriptions.csv`), while Bronze and Silver each hold the `online_retail` table at their respective stage of cleaning. The Gold schema contains the dimensional model tables (`dim_customer`, `dim_date`, `dim_product`, `fact_sales`), created via SQL to support the star schema — population from the Silver layer is still pending.
