@@ -98,20 +98,6 @@ The `dim_product` table stores descriptive information about the products availa
 | `stock_code`  | Product identifier from the source dataset. |
 | `description` | Product description.                        |
 
-#### Data Quality Analysis
-
-After removing null and duplicate records from the dataset, an exploratory analysis identified **213 `StockCode` values** associated with multiple product descriptions.
-
-The inconsistencies include:
-
-* Minor differences in formatting or wording.
-* Possible historical changes in product descriptions.
-* Descriptions that differ significantly, making it impossible to determine whether they refer to the same product or different products.
-
-Since the dataset does not provide a master product reference, standardization could not be inferred automatically. Each of the 213 divergent cases was reviewed manually to define a single canonical description per `StockCode`, and the result was stored as a reference file (`normalized_descriptions.csv`).
-
-During the Silver → Gold step, this reference is joined back into `df_silver` and used to overwrite the `Description` column via `coalesce`, so that products with a validated normalization receive the canonical description while all other records keep their original value unchanged.
-
 ---
 
 ### Date Dimension
@@ -168,6 +154,44 @@ The star schema connects the `fact_sales` table with the dimensional tables used
 
 ---
 
+## Data Quality Analysis
+
+After removing null and duplicate records from the dataset, an exploratory analysis identified **213 `StockCode` values** associated with multiple product descriptions.
+
+The inconsistencies include:
+
+* Minor differences in formatting or wording.
+* Possible historical changes in product descriptions.
+* Descriptions that differ significantly, making it impossible to determine whether they refer to the same product or different products.
+
+Since the dataset does not provide a master product reference, standardization could not be inferred automatically. Each of the 213 divergent cases was reviewed manually to define a single canonical description per `StockCode`, and the result was stored as a reference file (`normalized_descriptions.csv`).
+
+During the Silver → Gold step, this reference is joined back into `df_silver` and used to overwrite the `Description` column via `coalesce`, so that products with a validated normalization receive the canonical description while all other records keep their original value unchanged.
+
+---
+
+## Country Field Analysis
+
+An exploratory analysis identified the **United Kingdom** as the country with the highest number of distinct customers (3,950), consistent with this being a UK-based online retailer and its primary market.
+
+The `Country` field was also checked for formatting inconsistencies (casing variations and typos). After normalizing case and trimming whitespace, every distinct country name mapped to exactly one original spelling — confirming the field is already well standardized, with no corrections needed.
+
+---
+
+## Cancellation Timing Analysis
+
+For each cancellation, the closest matching original sale (same `CustomerID` and `StockCode`, occurring earlier) was identified, resulting in 7,069 matched cancellation-sale pairs.
+
+- **Average time to cancellation:** 29.27 days
+- **Median time to cancellation:** 12 days
+- **Range:** from 1 day (minimum) to 368 days (maximum) — the 368-day case falls within the dataset's own time span (2010-12-01 to 2011-12-09), confirming it reflects a genuine long-standing purchase rather than a matching error
+
+The gap between the average and the median indicates a right-skewed distribution: most cancellations happen soon after purchase, while a smaller number of long-delayed cases pull the average upward. A histogram of the full distribution confirms this, with a sharp concentration in the first 0-20 days.
+
+Using the IQR method (Q1 = 6 days, Q3 = 29 days, IQR = 23), cancellations occurring more than **63.5 days** after the original sale were classified as statistical outliers. These represent **834 out of 7,069** matched cancellations (**11.80%**). A closer look at this outlier group shows it is not random noise: it still decays gradually from 60 days onward, with a small resurgence near 350 days that overlaps with the dataset's maximum observed delay.
+
+---
+
 ## 🔄 Pipeline Steps
 
 ### 1. Raw → Bronze (`ingestion-raw-bronze`)
@@ -190,16 +214,12 @@ Cleaning and transformation of the raw data.
 
 ### 3. Silver → Gold (`ingestion-silver-gold`)
 
-Product description normalization and calculation of aggregated metrics for business analysis.
+Product description normalization and analysis of order cancellations.
 
 - Join of `df_silver` with a manually validated reference file (`normalized_descriptions.csv`), used to standardize the `Description` column for `StockCode` values with multiple descriptions
-- Calculation of aggregated metrics per customer, product, and country
-
-| Gold Table | Description | Columns |
-|---|---|---|
-| `sales_by_customer` | Totals per customer | `TotalSales`, `TotalPurchases`, `AveragePurchase` |
-| `sales_per_product` | Totals per product | `TotalSales`, `TotalQuantity` |
-| `sales_per_country` | Totals per country | `TotalSales`, `TotalQuantity` |
+- Matching of each cancellation (`InvoiceNo` starting with "C") to its closest original sale, based on matching `CustomerID` and `StockCode`
+- Calculation of the elapsed time (in days) between an original sale and its cancellation, including average, median, minimum, and maximum
+- Statistical outlier detection on cancellation delay using the IQR method
 
 ---
 
