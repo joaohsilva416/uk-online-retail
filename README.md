@@ -190,6 +190,10 @@ The gap between the average and the median indicates a right-skewed distribution
 
 Using the IQR method (Q1 = 6 days, Q3 = 29 days, IQR = 23), cancellations occurring more than **63.5 days** after the original sale were classified as statistical outliers. These represent **834 out of 7,069** matched cancellations (**11.80%**). A closer look at this outlier group shows it is not random noise: it still decays gradually from 60 days onward, with a small resurgence near 350 days that overlaps with the dataset's maximum observed delay.
 
+![Distribution of days between sale and cancellation](assets/analysis/distribution_days_between_cancellation.png)
+
+The distribution is heavily right-skewed: most cancellations happen within the first 0-20 days after purchase, with a long tail extending toward a year.
+
 ---
 
 ## 🔄 Pipeline Steps
